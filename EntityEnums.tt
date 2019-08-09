@@ -1,0 +1,88 @@
+﻿<#@ output extension=".txt" #> 
+<#@ assembly name="System.Configuration" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Data" #>
+<#@ assembly name="System.Xml" #>
+<#@ assembly name="Microsoft.SqlServer.ConnectionInfo" #>
+<#@ assembly name="Microsoft.SqlServer.Management.Sdk.Sfc" #>
+<#@ assembly name="Microsoft.SqlServer.Smo" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Configuration" #>
+<#@ import namespace="System.Data" #>
+<#@ import namespace="System.Data.SqlClient" #>
+<#@ import namespace="System.Xml" #>
+<#@ import namespace="Microsoft.SqlServer.Management.Smo" #>
+<#@ include file="MultiOutput.tt" #>
+
+
+ 
+<# 
+    List<string> enumTables = new List<string>();
+    enumTables.Add("AgentStatusType");		
+    enumTables.Add("BasisTypes");
+    enumTables.Add("DriverStatusTypes");
+    enumTables.Add("HotelStatusTypes");
+    enumTables.Add("RoomTypes");
+    enumTables.Add("UserStatusTypes");
+    enumTables.Add("VehicalTypes");
+    enumTables.Add("Roles");
+	enumTables.Add("RequistionTypes");
+	enumTables.Add("SupplierStatusTypes");
+	enumTables.Add("SupplimentTypes");
+	enumTables.Add("TourEnqueryTypes");
+	enumTables.Add("MiscellaneousType");
+	enumTables.Add("CostingStatusTypes");
+	enumTables.Add("VehicalAllocationStatusTypes");
+	enumTables.Add("TourEnqueryCategory");
+    
+    using (SqlConnection connection = new SqlConnection("data source=localhost;initial catalog=Ultra;integrated security=True;MultipleActiveResultSets=True;App=EntityFramework"))
+
+    {
+        string rootNameSpace = "Kians.Ultra";
+            
+        SqlCommand command = new SqlCommand();
+        command.Connection = connection;
+        command.CommandType = CommandType.Text;
+
+        foreach(string tableName in enumTables)
+        {
+            DataTable values =   new DataTable();
+            command.CommandText = string.Format("SELECT * from " + tableName);
+
+            SqlDataAdapter adapter =   new SqlDataAdapter(command);
+            adapter.Fill(values);
+	       
+	        
+            string stateName = tableName.Replace("Type","");
+            WorkFlowStateEnum(values,rootNameSpace,stateName);
+            SaveOutput(stateName +"Enum.cs");	
+        }
+       
+    }
+    DeleteOldOutputs(); 
+ #>
+ 
+  
+
+<#+    public void WorkFlowStateEnum(DataTable table,string rootNamespace,string enumName){#>
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace <#=        rootNamespace #>.Entity
+{
+    public enum <#=        enumName#>Enum  : int 
+    {
+	   <#+        bool isFirst = true; #>
+       <#+        foreach (DataRow row in table.Rows) {
+            string stateName = row["Name"].ToString().Replace(" ","") + "";#><#=            isFirst ? "":","#><#=            stateName #> = <#=            row["ID"].ToString() #>
+       <#+
+            isFirst = false;
+        } #>
+       
+    }
+}
+<#+    } #>
