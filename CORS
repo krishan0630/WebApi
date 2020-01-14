@@ -11,3 +11,91 @@
         }
     ]
 }
+
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Web;
+
+namespace Kians.Common.Business.Helpers
+{
+    public class MessageHelper
+    {
+        public static string ConvertToEmailSubjectValue(Dictionary<string, string> dictionary, string templateName)
+        {
+            string subject = string.Empty;
+            var filepath = System.Web.HttpContext.Current.Server.MapPath("~/MessageTemplate.xml");
+            using (XmlReader reader = XmlReader.Create(filepath))
+            {
+                while (reader.Read())
+                {
+                    // Only detect start elements.
+                    if (reader.IsStartElement())
+                    {
+                        if ((reader.NodeType == XmlNodeType.Element) && (reader.Name == "Message"))
+                        {
+                            if (reader.HasAttributes)
+                            {
+                                string type = reader.GetAttribute("type");
+                                if (type != null && type.Trim() == templateName)
+                                {
+                                    subject = reader.GetAttribute("subject");
+                                    foreach (KeyValuePair<string, string> entry in dictionary)
+                                    {
+                                        var modifiedAttr = string.Concat("$$", entry.Key.ToLower(), "$$");
+                                        subject = subject.Replace(modifiedAttr, entry.Value);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+            return subject;
+        }
+
+        public static string ConvertToEmailBodyValue(Dictionary<string, string> dictionary, string templateName)
+        {
+
+            var filepath = System.Web.HttpContext.Current.Server.MapPath("~/MessageTemplate.xml");
+            string body = string.Empty;
+            XmlDataDocument xmldoc = new XmlDataDocument();
+            XmlNodeList xmlnode;
+            int i = 0;
+            string str = null;
+            FileStream fs = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+            xmldoc.Load(fs);
+            xmlnode = xmldoc.GetElementsByTagName("Message");
+            for (i = 0; i <= xmlnode.Count - 1; i++)
+            {
+                if (xmlnode[i].Attributes["type"].Value.Trim().ToLower() == templateName.ToLower())
+                {
+                    if (xmlnode[i].HasChildNodes)
+                    {
+                        var xmlBody = xmlnode[i].ChildNodes.Item(0);
+                        if (xmlBody != null)
+                        {
+                            body = xmlBody.InnerText.Trim();
+                            foreach (KeyValuePair<string, string> entry in dictionary)
+                            {
+                                var modifiedAttr = string.Concat("$$", entry.Key.ToLower(), "$$");
+                                body = body.Replace(modifiedAttr, entry.Value);
+                            }
+                            break;
+                        }
+
+                    }
+                }
+
+            }
+            return body;
+        }
+    }
+}
