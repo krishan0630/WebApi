@@ -1,0 +1,9 @@
+var subject = new Dictionary<string, string>();
+                var body = new Dictionary<string, string>
+                {
+                    {"email", email},
+                    {"password", password}
+                };
+
+                var ubody = MessageHelper.ConvertToEmailBodyValue(body, "WelcomeUltra");
+                var uSubject = MessageHelper.ConvertToEmailSubjectValue(subject, "WelcomeUltra");
