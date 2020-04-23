@@ -10,4 +10,32 @@
                     HttpContext.Current.User = new System.Security.Principal.GenericPrincipal(new FormsIdentity(authTicket), roles);
                 }
             }
+        } // global.ascs
+
+
+   var authTicket = new FormsAuthenticationTicket(1, //version
+                    signInRequest.UserName, // user name
+                    DateTime.Now, //creation
+                     DateTime.Now.AddMinutes(60), //Expiration
+                    false, //Persistent
+                    userRole); // hacked to use roles instead
+
+                var encTicket = FormsAuthentication.Encrypt(authTicket);
+                Response.Cookies.Add(new HttpCookie(FormsAuthentication.FormsCookieName, encTicket)); // in controller 
+
+
+  public virtual ActionResult Signout()
+        {
+            FormsAuthentication.SignOut();
+            HttpContext.Session.Abandon();
+
+            var myCookies = Request.Cookies.AllKeys;
+            foreach (var cookie in myCookies)
+            {
+                Request.Cookies[cookie].Expires = DateTime.Now.AddDays(-1);
+                Response.Cookies[cookie].Expires = DateTime.Now.AddDays(-1);
+                Response.Cookies.Add(Response.Cookies[cookie]);
+                Request.Cookies.Add(Request.Cookies[cookie]);
+            }
+            return RedirectToAction(MVC.Account.ActionNames.SignIn); ;
         }
