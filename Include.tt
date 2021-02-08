@@ -1,0 +1,20 @@
+<#
+ var assemblyName = "Kians.Ultra.Entity"; 
+ string rootNameSpace = "Kians.Ultra";
+
+ #>
+
+<#@ assembly name="$(solutiondir)\Kians.Ultra.Entity\bin\debug\Kians.Ultra.Entity.dll" #>
+
+<#  
+string[] assemblyNames = new [] {"Kians.Ultra.Entity"}; 
+
+string[] schemaUpdateAssemblyNames = new [] { "Kians.Ultra.Entity"}; 
+
+string[] excluded = new string[] {}; 
+
+#>
+ 
+ 
+
+ 

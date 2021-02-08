@@ -1,0 +1,129 @@
+﻿<#@ output extension=".log" #> 
+<#@ assembly name="Microsoft.SqlServer.ConnectionInfo" #>
+<#@ assembly name="Microsoft.SqlServer.Smo" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="Microsoft.SqlServer.Management.Smo" #>
+<#@ import namespace="System" #>
+ 
+<#@ include file="MultiOutput.tt" #>
+ 
+<#Server server = new Server();
+    Database database = new Database(server, "EntityRegistration");
+    
+    database.Refresh();    
+    string currentNamespace = "MYOB.EntityRegistration.Business";
+	string currentassemblyname = "MYOB.EntityRegistration.Business";
+    
+    Info(); 
+    SaveOutput("info.txt");  
+    
+    foreach(Table table in database.Tables){  
+    if(table.Name != "sysdiagrams")
+    {
+		GenrateXML(table,currentNamespace,currentassemblyname);
+		SaveOutput(table.Name+ ".hbm.xml"); 
+		
+		CreateEntityFile(table,currentNamespace,currentassemblyname);
+		SaveOutput(table.Name+ ".cs");
+		
+	}
+	}
+    DeleteOldOutputs(); 
+    MarkEmbeddedResource(); 
+ 
+	SaveOutput("info.txt");
+#>
+
+
+
+<#+
+public void GenrateXML(Table table,string currentNameSpace,string currentassemblyname)
+{ 
+#>
+<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2"
+                   namespace="<#= currentNameSpace #>"
+                   assembly="<#= currentassemblyname #>">
+<class name="<#= table.Name #>" table="[<#= table.Name #>]">
+<#+ foreach (Column column in table.Columns){#><#+  if(column.InPrimaryKey){ #>
+	<id name="<#= column.Name #>" column="<#= column.Name #>" type="Int32">
+      <generator class="native"/>
+    </id>
+<#+ } else if(!column.IsForeignKey){#>
+    <property name="<#= column.Name #>" column="<#= column.Name #>" type="<#= GetNHibernateDataType(column) #>" />
+<#+ }
+}#>
+<#+ foreach (ForeignKey foreignKey in table.ForeignKeys) { #>
+  <many-to-one name="<#= foreignKey.ReferencedTable #>" column="<#= foreignKey.Columns[0].Name #>" class="<#= foreignKey.ReferencedTable #>" cascade="All" lazy="false" not-found="ignore"/>
+<#+ } #>
+</class>
+
+</hibernate-mapping>
+
+<#+ } #>
+
+
+<#+ public void CreateEntityFile(Table table,string currentNameSpace,string currentassemblyname){#>
+using System;
+using System.Collections.Generic;
+
+namespace <#= currentassemblyname #>
+{
+    public partial class <#= table.Name #>
+    {
+	}
+}	
+<#+ } #>
+
+<#+ public void Info(){
+		this.WriteLine(string.Empty);
+
+} #>
+
+<#+ 
+ 
+
+ 
+   public  string GetNHibernateDataType(Column column)
+        {
+            string datatype = string.Empty;
+            switch (column.DataType.Name)
+            {
+                case "nvarchar":
+                case "varchar":
+                case "nchar":
+                case "text":
+                case "ntext":
+                    datatype = "String";
+                    break;
+                case "int":
+                case "tinyint":
+                case "numeric":
+                    datatype = "Int32";
+                    break;
+                case "tinyint":
+					datatype = "Int64";
+					break;
+                case "bit":
+                    datatype = "Boolean";
+                    break;
+                    
+                case "datetime":
+                case "timestamp":                
+                    datatype = "DateTime";
+                    break;
+                case "decimal":
+                    datatype = "Decimal";
+                    break;
+                case "uniqueidentifier":
+                    datatype = "Guid";
+                    break; 
+                    
+                default:
+                    datatype = column.DataType.Name;
+                    break;
+            }
+            return datatype;
+        }
+
+ #>

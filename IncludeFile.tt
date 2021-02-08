@@ -1,0 +1,15 @@
+<#
+     Server server = new Server(new Microsoft.SqlServer.Management.Common.ServerConnection("localhost"));
+    Database database =new Database(server,"Ultra"); 
+    database.Refresh();    
+
+	string rootNameSpace = "Kians.Ultra";
+	string currentNamespace = rootNameSpace + ".Entity";
+ 	string connectionString = "data source=localhost;initial catalog=Ultra;integrated security=True;MultipleActiveResultSets=True;App=EntityFramework";
+	
+	List<string> exculteDatables = new List<string>{};
+ 
+#>
+
+
+<#+ public void Info(){} #>
