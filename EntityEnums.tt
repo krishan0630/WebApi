@@ -13,48 +13,36 @@
 <#@ import namespace="System.Data.SqlClient" #>
 <#@ import namespace="System.Xml" #>
 <#@ import namespace="Microsoft.SqlServer.Management.Smo" #>
-<#@ include file="MultiOutput.tt" #>
+<#@ include file="..\..\..\T4Template\MultiOutput.tt" #>
 
 
  
 <# 
     List<string> enumTables = new List<string>();
-    enumTables.Add("AgentStatusType");		
-    enumTables.Add("BasisTypes");
-    enumTables.Add("DriverStatusTypes");
-    enumTables.Add("HotelStatusTypes");
-    enumTables.Add("RoomTypes");
-    enumTables.Add("UserStatusTypes");
-    enumTables.Add("VehicalTypes");
     enumTables.Add("Roles");
-	enumTables.Add("RequistionTypes");
-	enumTables.Add("SupplierStatusTypes");
-	enumTables.Add("SupplimentTypes");
-	enumTables.Add("TourEnqueryTypes");
-	enumTables.Add("MiscellaneousType");
-	enumTables.Add("CostingStatusTypes");
-	enumTables.Add("VehicalAllocationStatusTypes");
-	enumTables.Add("TourEnqueryCategory");
-    
-    using (SqlConnection connection = new SqlConnection("data source=localhost;initial catalog=Ultra;integrated security=True;MultipleActiveResultSets=True;App=EntityFramework"))
+    enumTables.Add("QuestionTypes");
+    enumTables.Add("ProctoringTypes");
+    enumTables.Add("InstituteTypes");
+    enumTables.Add("DegreeTypes");
+    enumTables.Add("ExamStatusTypes");
+    enumTables.Add("StatusTypes");
+    enumTables.Add("UserStatusTypes");
 
+    using (SqlConnection connection = new SqlConnection("data source=localhost\\SQLEXPRESS;initial catalog=EduxBee;integrated security=True;MultipleActiveResultSets=True;App=EntityFramework"))
     {
-        string rootNameSpace = "Kians.Ultra";
-            
         SqlCommand command = new SqlCommand();
         command.Connection = connection;
         command.CommandType = CommandType.Text;
-
         foreach(string tableName in enumTables)
         {
             DataTable values =   new DataTable();
-            command.CommandText = string.Format("SELECT * from " + tableName);
+            command.CommandText = string.Format("SELECT * FROM " + tableName);
 
             SqlDataAdapter adapter =   new SqlDataAdapter(command);
             adapter.Fill(values);
-	       
 	        
-            string stateName = tableName.Replace("Type","");
+            string stateName = tableName.Replace(" ","");
+            string rootNameSpace = "Kians.EduxBee.Core.Enum";
             WorkFlowStateEnum(values,rootNameSpace,stateName);
             SaveOutput(stateName +"Enum.cs");	
         }
@@ -72,13 +60,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace <#=        rootNamespace #>.Entity
+namespace <#=        rootNamespace #>
 {
     public enum <#=        enumName#>Enum  : int 
     {
 	   <#+        bool isFirst = true; #>
+       <#+        string tblId = string.Concat(enumName.Remove(enumName.Length - 1, 1),"Id"); #>
        <#+        foreach (DataRow row in table.Rows) {
-            string stateName = row["Name"].ToString().Replace(" ","") + "";#><#=            isFirst ? "":","#><#=            stateName #> = <#=            row["ID"].ToString() #>
+            string stateName = row["Name"].ToString().Replace(" ","").Replace("(","").Replace(")","") + "";#><#=            isFirst ? "":","#><#=            stateName #> = <#=            row[tblId].ToString() #>
        <#+
             isFirst = false;
         } #>

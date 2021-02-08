@@ -1,0 +1,188 @@
+﻿<#@ output extension=".txt" #> 
+<#@ assembly name="System.Configuration" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Data" #>
+<#@ assembly name="System.Xml" #>
+<#@ assembly name="Microsoft.SqlServer.ConnectionInfo" #>
+<#@ assembly name="Microsoft.SqlServer.Management.Sdk.Sfc" #>
+<#@ assembly name="Microsoft.SqlServer.Smo" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Configuration" #>
+<#@ import namespace="System.Data" #>
+<#@ import namespace="System.Data.SqlClient" #>
+<#@ import namespace="System.Xml" #>
+<#@ import namespace="Microsoft.SqlServer.Management.Smo" #>
+<#@ include file="..\..\T4Template\MultiOutput.tt" #>
+<#@ include file="..\..\T4Template\IncludeFile.tt" #>
+
+ 
+<# 
+         List<string> entityTables = new List<string>();
+         entityTables.Add("AccountProfile");
+         entityTables.Add("AnnouncementClass");
+         entityTables.Add("AnnouncementFaculty");
+         entityTables.Add("Announcement");
+         entityTables.Add("Answer");
+         entityTables.Add("Class");
+         entityTables.Add("ClassIntake");
+         entityTables.Add("Config");
+         entityTables.Add("Degree");
+         entityTables.Add("DegreeType");
+         entityTables.Add("EmailQueue"); 
+         entityTables.Add("ExamClassIntake");
+         entityTables.Add("ExamFacultyIntake");
+         entityTables.Add("Exam");
+         entityTables.Add("ExamStatusType");
+         entityTables.Add("ExamType");
+         entityTables.Add("Faculty");
+         entityTables.Add("FacultyIntake");
+         entityTables.Add("ForgotPassword");
+         entityTables.Add("Grade");
+         entityTables.Add("Institute");
+         entityTables.Add("InstituteType"); 
+         entityTables.Add("InstituteUser");
+         entityTables.Add("IntakeYear");
+         entityTables.Add("Invitation");
+         entityTables.Add("Lecturer");
+         entityTables.Add("ProctoringType");
+         entityTables.Add("Question");
+         entityTables.Add("QuestionType");
+         entityTables.Add("Role");
+         entityTables.Add("StatusType");
+         entityTables.Add("StudentAnswer");
+         entityTables.Add("StudentExam");
+         entityTables.Add("Student");
+         entityTables.Add("Subject");
+         entityTables.Add("SudentProctoring");
+         entityTables.Add("SystemUser");
+         entityTables.Add("UserRole");
+         entityTables.Add("UserStatusType"); 
+         entityTables.Add("Payment"); 
+         entityTables.Add("GradeMark"); 
+         entityTables.Add("GradeMarksType"); 
+         entityTables.Add("Country"); 
+
+    CreateUnitOfWorkClassFile("Kians.EduxBee.Infrastructure.Repository",entityTables);
+    SaveOutput("UnitOfWork.cs","Repository");
+    
+    CreateUnitOfWorkInterfaceFile("Kians.EduxBee.Infrastructure.Interfaces",entityTables);
+    SaveOutput("IUnitOfWork.cs","Interfaces");
+    
+    DeleteOldOutputs(); 
+ #>
+ 
+  
+
+<#+    public void CreateUnitOfWorkClassFile(string rootNamespace, List<string> entityTables){#>
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace <#=        rootNamespace #>
+{
+    using Kians.EduxBee.Core;
+    using Kians.EduxBee.Core.Entity;
+    using Kians.EduxBee.Infrastructure.Interfaces;
+    public class UnitOfWork : IUnitOfWork
+    {
+        private bool disposed = false;
+
+        private EduxBeeEntities context;
+      
+           <#+        foreach (string table in entityTables) {
+            string stateName = !string.IsNullOrWhiteSpace(table) && char.IsUpper(table, 0) ? table.Replace(table[0],char.ToLower(table[0])) : table;
+            #>
+            private GenericRepository<<#= table #>> _<#= stateName #>Repository;
+             
+           <#+        } #>
+               
+             public EduxBeeEntities DbContext
+             {
+                    get
+                    {
+                        if (context == null)
+                        {
+                            context = new EduxBeeEntities();
+                        }
+                        return context;
+                    }
+             }
+
+	    
+           <#+        foreach (string table in entityTables) {
+            string stateName = !string.IsNullOrWhiteSpace(table) && char.IsUpper(table, 0) ? table.Replace(table[0],char.ToLower(table[0])) : table;
+            #>
+                
+               public GenericRepository<<#= table #>> <#= table #>Repository
+               {
+                    get
+                    {
+                        if (_<#= stateName #>Repository == null)
+                        {
+                           _<#= stateName #>Repository = new GenericRepository<<#= table #>>(DbContext);
+                        }
+                        return _<#= stateName #>Repository;
+                    }
+                }
+             
+           <#+  } #>
+       
+        protected void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    DbContext.Dispose();
+                }
+            }
+            this.disposed = true;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public void Save()
+        {
+            DbContext.SaveChanges();
+        }
+    }
+}
+<#+    } #>
+
+<#+    public void CreateUnitOfWorkInterfaceFile(string rootNamespace, List<string> entityTables){#>
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace <#=        rootNamespace #>
+{
+    using Kians.EduxBee.Core;
+    using Kians.EduxBee.Core.Entity;
+    using Kians.EduxBee.Infrastructure.Interfaces;
+    using Kians.EduxBee.Infrastructure.Repository;
+
+    public interface IUnitOfWork : IDisposable
+    {
+        
+        EduxBeeEntities DbContext { get; }
+        void Save();
+           <#+        foreach (string table in entityTables) {
+            string stateName = !string.IsNullOrWhiteSpace(table) && char.IsUpper(table, 0) ? table.Replace(table[0],char.ToLower(table[0])) : table;
+            #>
+        GenericRepository<<#= table #>> <#= table #>Repository { get; }
+             
+           <#+        } #>
+               
+            
+    }
+}
+<#+    } #>
